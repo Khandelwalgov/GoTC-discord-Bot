@@ -99,9 +99,10 @@ class Registration(commands.Cog):
         member: disnake.Member = commands.Param(description="Tag the user you want to add")
     ):
         user_ref = self.get_user_ref(inter)
-        user_ref.update({
-            "access_list": firestore.ArrayUnion([str(member.id)])
-        })
+        user_ref.set({
+            "access_list": firestore.ArrayUnion([str(member.id)]),
+            "updated_at": firestore.SERVER_TIMESTAMP,
+        }, merge=True)
         
         embed = disnake.Embed(
             description=f"🏰 **Keep Access Granted** to {member.mention}",
@@ -132,7 +133,7 @@ class Registration(commands.Cog):
 
         # Check Main Account
         if user_data.get("ign", "").lower() == current_name.lower():
-            user_ref.update({"ign": new_name})
+            user_ref.update({"ign": new_name, "updated_at": firestore.SERVER_TIMESTAMP})
             return await inter.send(f"✅ Main IGN updated to **{new_name}**", ephemeral=True)
 
         # Check Alts
@@ -142,7 +143,7 @@ class Registration(commands.Cog):
             alt_data = alt_doc.to_dict()
             user_ref.collection("alts").document(new_name).set(alt_data)
             alt_ref.delete()
-            return await inter.edit_original_message(content=f"✅ Alt **{current_name}** renamed to **{new_name}**")
+            return await inter.send(f"✅ Alt **{current_name}** renamed to **{new_name}**", ephemeral=True)
 
         await inter.send(f"❌ Record for **{current_name}** not found.", ephemeral=True)
 

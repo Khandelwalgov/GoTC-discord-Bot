@@ -1,125 +1,144 @@
 import disnake
 from disnake.ext import commands
 
+
+BRAND_COLOR = disnake.Color.from_rgb(190, 145, 70)
+
+
+COMMANDS = {
+    "profile": {
+        "title": "Profile",
+        "commands": [
+            ("/register", "Create or update your GoTC profile."),
+            ("/add_alt", "Add an alt under your account."),
+            ("/update_name", "Rename your main or an alt."),
+            ("/add_access", "Grant someone keep access."),
+            ("/update_access", "Remove keep access from your list."),
+        ],
+    },
+    "stats": {
+        "title": "Stats",
+        "commands": [
+            ("/update_attack", "Update marching and rally stats."),
+            ("/update_defence", "Update stationary and reinforcement stats."),
+            ("/get_stats", "Look up recorded combat stats."),
+            ("/export_roster", "Export roster data to CSV or a message."),
+        ],
+    },
+    "coordination": {
+        "title": "Coordination",
+        "commands": [
+            ("/time12", "Post a 12-hour time as a Discord timestamp."),
+            ("/time24", "Post a 24-hour time as a Discord timestamp."),
+            ("/poll", "Create a Firestore-backed council poll."),
+            ("/availability_check", "Post the weekend availability panel."),
+            ("/availability_report", "Show availability by slot."),
+        ],
+    },
+    "council": {
+        "title": "Council",
+        "commands": [
+            ("/lookup_account", "View owner, alts, and keep access."),
+            ("/bubble_up", "Ping an owner and their access list."),
+            ("/announce", "Send a council announcement."),
+            ("/setup_council", "Set the council role."),
+            ("/setup_announcements", "Set the announcement channel."),
+        ],
+    },
+    "setup": {
+        "title": "Setup",
+        "commands": [
+            ("/setup_gotc_roles", "Create or verify all GoTC roles."),
+            ("/post_role_panel", "Post troop, type, specialist, and dragon panels."),
+            ("/moderate", "Kick or ban a member."),
+        ],
+    },
+}
+
+
+DETAILS = {
+    "register": (
+        "Create your profile",
+        "`/register in_game_name:<IGN> timezone:<Region/City>`",
+        "Stores your profile inside this Discord server only. Timezone autocomplete keeps event times accurate.",
+    ),
+    "add_alt": (
+        "Add an alt",
+        "`/add_alt name:<AltIGN>`",
+        "Adds an alt under your profile and asks for its purpose using a dropdown.",
+    ),
+    "add_access": (
+        "Grant keep access",
+        "`/add_access member:@User`",
+        "Adds someone to your keep access list so council can bubble the right people.",
+    ),
+    "poll": (
+        "Create a poll",
+        "`/poll question:<text> options:<A, B, C>`",
+        "Creates a live poll whose votes are stored in Firestore, so Render restarts do not wipe results.",
+    ),
+    "availability_check": (
+        "Start availability check",
+        "`/availability_check`",
+        "Clears old weekend availability roles and posts a fresh private-response button panel.",
+    ),
+    "post_role_panel": (
+        "Post role panels",
+        "`/post_role_panel`",
+        "Posts persistent role selection panels for troop tier, primary type, specialist roles, and dragon level.",
+    ),
+    "export_roster": (
+        "Export roster data",
+        "`/export_roster format:CSV include_alts:True stat_columns:Full Combat Stats`",
+        "Builds a roster export from Firestore. CSV is best when council wants to sort or share data.",
+    ),
+}
+
+
 class HelpCommand(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.slash_command(description="Detailed guide for all Steward commands")
+    @commands.slash_command(name="help", description="Open the Steward command guide")
     async def help(
-        self, 
-        inter: disnake.ApplicationCommandInteraction, 
-        command: str = commands.Param(default=None, description="Specify a command for deep-dive info")
+        self,
+        inter: disnake.ApplicationCommandInteraction,
+        command: str = commands.Param(default=None, description="Optional command name for details"),
     ):
         await inter.response.defer(ephemeral=True)
 
-        # --- DATA DICTIONARY FOR ALL COMMANDS ---
-        help_data = {
-            "register": {
-                "desc": "Creates your server-specific profile.",
-                "usage": "`/register in_game_name: <IGN> timezone: <City>`",
-                "details": "Ties your GoTC identity to this server. Uses autocomplete for timezones to ensure accurate rally timings."
-            },
-            "add_alt": {
-                "desc": "Registers an alternative account under your profile.",
-                "usage": "`/add_alt name: <AltIGN>`",
-                "details": "Select the purpose (Farming, Attack, etc.) from the dropdown. Alts are isolated to this server."
-            },
-            "update_attack": {
-                "desc": "Updates combat stats for Main or Alts.",
-                "usage": "`/update_attack target: <main or AltName>`",
-                "details": "Opens a modal to input Marching Attack, HP, Def, and Rally capacities."
-            },
-            "update_defence": {
-                "desc": "Updates stationary/reinforcement stats.",
-                "usage": "`/update_defence target: <main or AltName>`",
-                "details": "Opens a modal for Stationary Att/Def/HP and Reinforcement Cap."
-            },
-            "lookup_account": {
-                "desc": "Council: Check owner and access lists.",
-                "usage": "`/lookup_account member: [@User] or ign: [Name]`",
-                "details": "Displays account security, registered alts, and who has keep access."
-            },
-            "get_stats": {
-                "desc": "Retrieve full combat data for an account.",
-                "usage": "`/get_stats member: [@User] or ign: [Name]`",
-                "details": "Returns a detailed embed with every attack and defence stat recorded."
-            },
-            "export_roster": {
-                "desc": "Council: Export full allegiance data.",
-                "usage": "`/export_roster format: [CSV/Text] stat_columns: [Filter]`",
-                "details": "Generates a spreadsheet or message. 'Attack Only' pulls all 5 marcher/rally stats."
-            },
-            "bubble_up": {
-                "desc": "Emergency ping for a keep.",
-                "usage": "`/bubble_up member: [@User] or ign: [Name]`",
-                "details": "Tags the owner AND everyone on their access list for urgent action."
-            },
-            "time12": {
-                "desc": "Share a 12h time converted for everyone.",
-                "usage": "`/time12 time_input: [5:30pm] date_input: [Select] extra_text: [Message]`",
-                "details": "Everyone sees this time in THEIR own local timezone. No more mental math."
-            },
-            "post_weekend_availability": {
-                "desc": "Start the weekly availability check.",
-                "usage": "`/post_weekend_availability`",
-                "details": "Resets current weekend roles and posts the reaction buttons for the new week."
-            },
-            "create_poll": {
-                "desc": "Launch a custom poll with a 'Close' button.",
-                "usage": "`/create_poll question: [Text] options: [Opt1, Opt2...]`",
-                "details": "Votes are tracked live. Only Council can click the button to finalize the results."
-            }
-        }
-
-        # --- SINGLE COMMAND HELP ---
         if command:
-            cmd_clean = command.lower().replace("/", "")
-            if cmd_clean in help_data:
-                data = help_data[cmd_clean]
-                embed = disnake.Embed(title=f"📖 Command: /{cmd_clean}", color=disnake.Color.blue())
-                embed.add_field(name="What it does", value=data["desc"], inline=False)
-                embed.add_field(name="Usage", value=f"**{data['usage']}**", inline=False)
-                embed.add_field(name="Details", value=data["details"], inline=False)
+            command_name = command.lower().replace("/", "").strip()
+            if command_name in DETAILS:
+                title, usage, details = DETAILS[command_name]
+                embed = disnake.Embed(title=f"/{command_name}: {title}", color=BRAND_COLOR)
+                embed.add_field(name="Usage", value=usage, inline=False)
+                embed.add_field(name="Details", value=details, inline=False)
                 return await inter.edit_original_message(embed=embed)
-            else:
-                return await inter.edit_original_message(content=f"❌ Command `/{cmd_clean}` not found.")
 
-        # --- FULL CATEGORIZED HELP ---
+            return await inter.edit_original_message(
+                content=f"I do not have a detailed card for `/{command_name}` yet. Try `/help` for the full menu."
+            )
+
         embed = disnake.Embed(
-            title="🏰 Steward: Allegiance Management System",
-            description="All data is **Server Isolated**. Your stats here stay here.\nUse `/help command:name` for specific usage.",
-            color=disnake.Color.gold()
+            title="Steward Command Guide",
+            description="Server-isolated GoTC coordination, roles, profiles, stats, and council tools.",
+            color=BRAND_COLOR,
         )
 
-        embed.add_field(
-            name="📝 Registration & Profile",
-            value="`register`, `add_alt`, `update_name`, `add_access`, `update_access`",
-            inline=False
-        )
-        embed.add_field(
-            name="⚔️ Combat Stats",
-            value="`update_attack`, `update_defence`",
-            inline=False
-        )
-        embed.add_field(
-            name="🛡️ Council & Intelligence",
-            value="`lookup_account`, `get_stats`, `export_roster`, `bubble_up`, `get_availability`",
-            inline=False
-        )
-        embed.add_field(
-            name="📅 Coordination & Management",
-            value="`time12`, `time24`, `create_poll`, `post_weekend_availability`, `council_announcement`",
-            inline=False
-        )
-        embed.add_field(
-            name="⚙️ Server Admin",
-            value=" `configure_weekend`, `setup_reaction_roles` (Run these first!)",
-            inline=False
-        )
+        for section in COMMANDS.values():
+            lines = [f"`{name}` - {description}" for name, description in section["commands"]]
+            embed.add_field(name=section["title"], value="\n".join(lines), inline=False)
 
-        embed.set_footer(text="Developed for GoT:C Alliances")
+        embed.set_footer(text="Tip: use /help command:poll for a focused command card.")
         await inter.edit_original_message(embed=embed)
+
+    @help.autocomplete("command")
+    async def help_autocomplete(self, inter, string: str):
+        query = string.lower()
+        names = sorted(DETAILS.keys())
+        return [name for name in names if query in name][:25]
+
 
 def setup(bot):
     bot.add_cog(HelpCommand(bot))

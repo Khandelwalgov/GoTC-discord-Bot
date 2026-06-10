@@ -6,7 +6,7 @@ class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.slash_command(description="Moderation commands")
+    @commands.slash_command(name="moderate", description="Kick or ban a member")
     @commands.has_permissions(kick_members=True)
     # FIX: Ensure parameters without defaults come BEFORE those with defaults, 
     # OR give them all a default using commands.Param
@@ -21,7 +21,12 @@ class Admin(commands.Cog):
             await member.kick(reason=reason)
         else:
             await member.ban(reason=reason)
-        await inter.send(f"✅ {action.capitalize()}ed {member.display_name} | Reason: {reason}", ephemeral=True)
+        embed = disnake.Embed(
+            title="Moderation Action",
+            description=f"**{action.capitalize()}ed:** {member.mention}\n**Reason:** {reason}",
+            color=disnake.Color.dark_red(),
+        )
+        await inter.send(embed=embed, ephemeral=True)
 
     @commands.Cog.listener()
     async def on_member_join(self, member):

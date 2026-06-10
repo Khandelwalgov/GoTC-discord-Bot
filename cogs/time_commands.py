@@ -8,8 +8,14 @@ class TimeStuff(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def get_user_tz(self, user_id):
-        doc = db.collection("users").document(str(user_id)).get()
+    async def get_user_tz(self, guild_id, user_id):
+        doc = (
+            db.collection("guilds")
+            .document(str(guild_id))
+            .collection("users")
+            .document(str(user_id))
+            .get()
+        )
         if doc.exists:
             return doc.to_dict().get("timezone", "UTC")
         return "UTC"
@@ -20,7 +26,7 @@ class TimeStuff(commands.Cog):
         print("Time Cog Loaded: Date Autocomplete Ready")
 
     async def date_autocomplete(self, inter, string: str):
-        tz_str = await self.get_user_tz(inter.author.id)
+        tz_str = await self.get_user_tz(inter.guild.id, inter.author.id)
         user_tz = pytz.timezone(tz_str)
         now = datetime.now(user_tz)
         
@@ -44,7 +50,7 @@ class TimeStuff(commands.Cog):
         extra_text: str = commands.Param(default="", description="Message to include (e.g. 'Rally at')")
     ):
         await inter.response.defer()
-        tz_str = await self.get_user_tz(inter.author.id)
+        tz_str = await self.get_user_tz(inter.guild.id, inter.author.id)
         user_tz = pytz.timezone(tz_str)
 
         try:
@@ -69,7 +75,7 @@ class TimeStuff(commands.Cog):
         extra_text: str = commands.Param(default="", description="Message to include (e.g. 'Rally at')")
     ):
         await inter.response.defer()
-        tz_str = await self.get_user_tz(inter.author.id)
+        tz_str = await self.get_user_tz(inter.guild.id, inter.author.id)
         user_tz = pytz.timezone(tz_str)
 
         try:
