@@ -33,6 +33,7 @@ COMMANDS = {
             ("/poll", "Create a Firestore-backed council poll."),
             ("/availability_check", "Post the weekend availability panel."),
             ("/availability_report", "Show availability by slot."),
+            ("/create_battlegrounds_event", "Create a BG signup with reminders."),
         ],
     },
     "council": {
@@ -50,6 +51,7 @@ COMMANDS = {
         "commands": [
             ("/setup_gotc_roles", "Create or verify all GoTC roles."),
             ("/post_role_panel", "Post troop, type, specialist, and dragon panels."),
+            ("/post_battleground_ping_panel", "Post BG ping opt-in buttons."),
             ("/moderate", "Kick or ban a member."),
         ],
     },
@@ -80,12 +82,22 @@ DETAILS = {
     "availability_check": (
         "Start availability check",
         "`/availability_check`",
-        "Clears old weekend availability roles and posts a fresh private-response button panel.",
+        "Clears old weekend availability roles and posts a fresh panel. Open, Mid-Shift, and Close can stack; Throughout and Absent are exclusive.",
     ),
     "post_role_panel": (
         "Post role panels",
         "`/post_role_panel`",
         "Posts persistent role selection panels for troop tier, primary type, specialist roles, and dragon level.",
+    ),
+    "post_battleground_ping_panel": (
+        "Post BG opt-in panel",
+        "`/post_battleground_ping_panel`",
+        "Posts buttons for all battleground pings, Titans of the North, and The Great Ranging.",
+    ),
+    "create_battlegrounds_event": (
+        "Create battleground event",
+        "`/create_battlegrounds_event type:<Titans/The Great Ranging> time:<8pm or 2030>`",
+        "Uses your registered timezone, posts a signup list, and reminds signed-up players 60, 30, 15, and 0 minutes before start.",
     ),
     "export_roster": (
         "Export roster data",
