@@ -52,7 +52,32 @@ COMMANDS = {
             ("/setup_gotc_roles", "Create or verify all GoTC roles."),
             ("/post_role_panel", "Post troop, type, specialist, and dragon panels."),
             ("/post_battleground_ping_panel", "Post BG ping opt-in buttons."),
+            ("/set_logs_channel", "Set join/leave log channel."),
+            ("/disable_logs_channel", "Disable join/leave logs."),
+            ("/set_autorole", "Set an existing role for new members."),
+            ("/disable_autorole", "Disable automatic role assignment."),
+            ("/server_settings", "Show current server settings."),
             ("/moderate", "Kick or ban a member."),
+        ],
+    },
+    "admin_proxy": {
+        "title": "Admin Proxy",
+        "commands": [
+            ("/add_register", "Register a member on their behalf."),
+            ("/add_update", "Update a member's main or alt stats."),
+        ],
+    },
+    "legion_roster": {
+        "title": "Legion Roster",
+        "commands": [
+            ("/roster_template", "Download the full roster CSV template."),
+            ("/roster_import", "Preview and import a full seat roster."),
+            ("/roster_validate", "Check hierarchy, capacity, and TA expiry."),
+            ("/roster_export", "Export roster as CSV, JSON, or text."),
+            ("/roster_update_positions", "Create a weekly placement draft."),
+            ("/roster_alts", "List roster PA/TA entries."),
+            ("/roster_update_expiry", "Batch update TA expiry dates."),
+            ("/roster_config", "Configure TA expiry defaults and alerts."),
         ],
     },
 }
@@ -73,6 +98,16 @@ DETAILS = {
         "Grant keep access",
         "`/add_access member:@User`",
         "Adds someone to your keep access list so council can bubble the right people.",
+    ),
+    "add_register": (
+        "Admin register",
+        "`/add_register member:@User in_game_name:<IGN> timezone:Asia/Kolkata tier:T11`",
+        "Admin-only shortcut that writes the selected member's profile to the same Firestore path as self-registration.",
+    ),
+    "add_update": (
+        "Admin stat update",
+        "`/add_update member:@User stat_type:attack target:main`",
+        "Admin-only stat modal for updating a selected member's main account or an already registered alt.",
     ),
     "poll": (
         "Create a poll",
@@ -99,10 +134,60 @@ DETAILS = {
         "`/create_battlegrounds_event type:<Titans/The Great Ranging> time:<8pm or 2030>`",
         "Uses your registered timezone, posts a signup list, and reminds signed-up players 60, 30, 15, and 0 minutes before start.",
     ),
+    "set_logs_channel": (
+        "Set logs channel",
+        "`/set_logs_channel channel:#server-logs`",
+        "Sends join and leave logs only to the configured channel.",
+    ),
+    "disable_logs_channel": (
+        "Disable logs",
+        "`/disable_logs_channel`",
+        "Turns off Steward join and leave logs.",
+    ),
+    "set_autorole": (
+        "Set autorole",
+        "`/set_autorole role:@Member enabled:True`",
+        "Uses an existing assignable role for new members. Steward will not create roles.",
+    ),
+    "disable_autorole": (
+        "Disable autorole",
+        "`/disable_autorole`",
+        "Stops automatic role assignment for new members.",
+    ),
+    "server_settings": (
+        "Server settings",
+        "`/server_settings`",
+        "Shows the configured log channel and autorole state.",
+    ),
     "export_roster": (
         "Export roster data",
         "`/export_roster format:CSV include_alts:True stat_columns:Full Combat Stats`",
         "Builds a roster export from Firestore. CSV is best when council wants to sort or share data.",
+    ),
+    "roster_template": (
+        "Download roster template",
+        "`/roster_template`",
+        "Returns the exact CSV structure for the lightweight Legion seat roster.",
+    ),
+    "roster_import": (
+        "Import roster",
+        "`/roster_import file:<csv> roster_name:Main Legion replace_existing:False`",
+        "Validates a full roster CSV, fixes missing TA expiry defaults, then shows an Apply/Cancel preview.",
+    ),
+    "roster_update_positions": (
+        "Weekly roster draft",
+        "`/roster_update_positions file:<csv> mode:auto` or `/roster_update_positions text:<T1/T2/T3/T4 block> mode:ask`",
+        "Creates a draft that honors requested placements, cascades overflow, and keeps normal accounts above alts. Use `ask` for review-only conflicts, `auto` to allow recommended moves, or `random` among lowest-priority candidates.",
+    ),
+    "roster_alts": (
+        "Roster alts",
+        "`/roster_alts filter:expired`",
+        "Lists only roster PA/TA entries. This is separate from the registered /add_alt system.",
+    ),
+    "roster_config": (
+        "Roster config",
+        "`/roster_config default_ta_expiry_days:30 ta_warning_days:1 expiry_channel:#channel`",
+        "Configures default TA expiry, warning window, and daily expiry alert channel.",
     ),
 }
 

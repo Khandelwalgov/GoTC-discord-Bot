@@ -91,6 +91,50 @@ class Registration(commands.Cog):
         choices = [tz for tz in pytz.common_timezones if string in tz.lower()]
         return choices[:25]
 
+    @commands.slash_command(description="Admin: register a member on their behalf")
+    @commands.has_permissions(administrator=True)
+    async def add_register(
+        self,
+        inter: disnake.ApplicationCommandInteraction,
+        member: disnake.Member = commands.Param(description="Member to register"),
+        in_game_name: str = commands.Param(description="Their exact GoTC name"),
+        timezone: str = commands.Param(description="Timezone, e.g. Asia/Kolkata"),
+        tier: str = commands.Param(choices=[f"T{i}" for i in range(1, 13)], description="Troop tier"),
+    ):
+        if timezone not in pytz.all_timezones:
+            return await inter.send(
+                f"`{timezone}` is not a valid timezone. Pick one from autocomplete.",
+                ephemeral=True,
+            )
+
+        user_ref = (
+            db.collection("guilds")
+            .document(str(inter.guild.id))
+            .collection("users")
+            .document(str(member.id))
+        )
+        user_ref.set(
+            {
+                "ign": in_game_name,
+                "tier": tier,
+                "timezone": timezone,
+                "registered_by": str(inter.author.id),
+                "registered_via": "admin_proxy",
+                "updated_at": firestore.SERVER_TIMESTAMP,
+            },
+            merge=True,
+        )
+        await inter.send(
+            f"Registered {member.mention} as **{in_game_name}** / **{tier}** / **{timezone}**.",
+            ephemeral=True,
+        )
+
+    @add_register.autocomplete("timezone")
+    async def add_register_tz_autocomplete(self, inter: disnake.ApplicationCommandInteraction, string: str):
+        string = string.lower()
+        choices = [tz for tz in pytz.common_timezones if string in tz.lower()]
+        return choices[:25]
+
     # 2. PROPER USER TAGGING (KEEP ACCESS)
     @commands.slash_command(description="Grant a user access to your Keep")
     async def add_access(
