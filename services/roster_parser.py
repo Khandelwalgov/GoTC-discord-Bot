@@ -262,19 +262,42 @@ def summarize_entries(entries, fixed_expiry_count=0, today=None, ta_warning_days
 def parse_update_text(text):
     sections = {"T1": [], "T2": [], "T3": [], "T4": [], "PROTECT": [], "REMOVE": [], "MODE": []}
     current = None
+    section_names = set(sections.keys())
+
+    def add_values(section, value):
+        if section not in sections:
+            return
+        for item in str(value or "").split(","):
+            cleaned = item.strip()
+            if cleaned:
+                sections[section].append(cleaned)
+
+    inline_chunks = []
 
     for raw_line in text.splitlines():
         line = raw_line.strip()
         if not line:
             continue
 
-        upper = line.rstrip(":").upper()
-        if upper in sections:
+        parts = [part.strip() for part in line.split("|") if part.strip()]
+        inline_chunks.extend(parts)
+
+    for chunk in inline_chunks:
+        if ":" in chunk:
+            maybe_section, value = chunk.split(":", 1)
+            upper = maybe_section.strip().upper()
+            if upper in section_names:
+                current = upper
+                add_values(current, value)
+                continue
+
+        upper = chunk.rstrip(":").upper()
+        if upper in section_names:
             current = upper
             continue
 
         if current:
-            sections[current].append(line)
+            add_values(current, chunk)
 
     requested = {}
     for tier in TIERS:

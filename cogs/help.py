@@ -176,8 +176,9 @@ DETAILS = {
     ),
     "roster_update_positions": (
         "Weekly roster draft",
-        "`/roster_update_positions file:<csv> mode:auto` or `/roster_update_positions text:<T1/T2/T3/T4 block> mode:ask`",
-        "Creates a draft that honors requested placements, cascades overflow, and keeps normal accounts above alts. Use `ask` for review-only conflicts, `auto` to allow recommended moves, or `random` among lowest-priority candidates.",
+        "`/roster_update_positions file:<csv> mode:auto`\n"
+        "`/roster_update_positions text:T1: vix | T2: t2alt, IamT31, Gov | PROTECT: vix, Gov mode:ask`",
+        "Text supports multiline sections or one-line pipe sections. Sections: T1, T2, T3, T4, PROTECT, REMOVE, MODE. Names can be comma-separated. Empty sections are allowed.",
     ),
     "roster_alts": (
         "Roster alts",
