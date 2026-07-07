@@ -91,15 +91,14 @@ class DragonStatsModal(disnake.ui.Modal):
                 disnake.ui.TextInput(label="Dragon Marcher Health vs Player at SoP", custom_id="dragon_m_health", placeholder="Dragon marcher health vs player at seat of power"),
                 disnake.ui.TextInput(label="Dragon Attack vs Dragon", custom_id="dragon_att_vs_dragon", placeholder="Dragon attack vs dragon"),
             ]
-            title = "Dragon Attack Upgrade Stats"
+            title = "Dragon Attack Stats"
         else:
             components = [
                 disnake.ui.TextInput(label="Dragon Defense vs Player at SoP", custom_id="dragon_def_player_sop", placeholder="Dragon defense vs player at seat of power"),
                 disnake.ui.TextInput(label="Dragon Attack vs Player at SoP", custom_id="dragon_att_player_sop", placeholder="Dragon attack vs player at seat of power"),
                 disnake.ui.TextInput(label="Dragon Health vs Player at SoP", custom_id="dragon_health_player_sop", placeholder="Dragon health vs player at seat of power"),
-                disnake.ui.TextInput(label="Dragon Defense vs Dragon", custom_id="dragon_def_vs_dragon", placeholder="Dragon defense vs dragon"),
             ]
-            title = "Dragon Defense Upgrade Stats"
+            title = "Dragon Defense Stats"
 
         super().__init__(title=title, components=components)
 
@@ -110,7 +109,7 @@ class DragonStatsModal(disnake.ui.Modal):
         stat_field = "dragon_attack_stats" if self.stat_type == "attack" else "dragon_defense_stats"
         path.set({stat_field: inter.text_values, "updated_at": firestore.SERVER_TIMESTAMP}, merge=True)
         await inter.edit_original_message(
-            content=f"Dragon {self.stat_type} upgrade stats updated for **{self.target_name}**."
+            content=f"Dragon {self.stat_type} stats updated for **{self.target_name}**."
         )
 
 class ProxyStatsModal(disnake.ui.Modal):
@@ -221,14 +220,14 @@ class Stats(commands.Cog):
         if is_valid:
             await inter.response.send_modal(DefenseStatsModal(target, is_alt, inter.guild.id))
 
-    @commands.slash_command(name="upgrade_dragon_attack_stats", description="Update dragon attack upgrade stats")
-    async def upgrade_dragon_attack_stats(self, inter: disnake.ApplicationCommandInteraction, target: str = commands.Param(default="main", description="Enter 'main' or Alt Name")):
+    @commands.slash_command(name="update_dragon_attack_stats", description="Update dragon attack stats")
+    async def update_dragon_attack_stats(self, inter: disnake.ApplicationCommandInteraction, target: str = commands.Param(default="main", description="Enter 'main' or Alt Name")):
         is_valid, is_alt = await self.validate_target(inter, target)
         if is_valid:
             await inter.response.send_modal(DragonStatsModal("attack", target, is_alt, inter.guild.id))
 
-    @commands.slash_command(name="upgrade_dragon_defense_stats", description="Update dragon defense upgrade stats")
-    async def upgrade_dragon_defense_stats(self, inter: disnake.ApplicationCommandInteraction, target: str = commands.Param(default="main", description="Enter 'main' or Alt Name")):
+    @commands.slash_command(name="update_dragon_defense_stats", description="Update dragon defense stats")
+    async def update_dragon_defense_stats(self, inter: disnake.ApplicationCommandInteraction, target: str = commands.Param(default="main", description="Enter 'main' or Alt Name")):
         is_valid, is_alt = await self.validate_target(inter, target)
         if is_valid:
             await inter.response.send_modal(DragonStatsModal("defense", target, is_alt, inter.guild.id))

@@ -101,8 +101,7 @@ class Council(commands.Cog):
         if dragon_def:
             dragon_def_fmt = (f"**Dragon defense vs player at SoP:** {dragon_def.get('dragon_def_player_sop', '-')}\n"
                               f"**Dragon attack vs player at SoP:** {dragon_def.get('dragon_att_player_sop', '-')}\n"
-                              f"**Dragon health vs player at SoP:** {dragon_def.get('dragon_health_player_sop', '-')}\n"
-                              f"**Dragon defense vs dragon:** {dragon_def.get('dragon_def_vs_dragon', '-')}")
+                              f"**Dragon health vs player at SoP:** {dragon_def.get('dragon_health_player_sop', '-')}")
             embed.add_field(name="Dragon Defense", value=dragon_def_fmt, inline=False)
 
         await inter.edit_original_message(embed=embed)
@@ -184,8 +183,7 @@ class Council(commands.Cog):
                     entry.update({
                         "Dragon_Def_Player_SoP": dragon_defense.get("dragon_def_player_sop", "-"),
                         "Dragon_Att_Player_SoP": dragon_defense.get("dragon_att_player_sop", "-"),
-                        "Dragon_HP_Player_SoP": dragon_defense.get("dragon_health_player_sop", "-"),
-                        "Dragon_Def_vs_Dragon": dragon_defense.get("dragon_def_vs_dragon", "-")
+                        "Dragon_HP_Player_SoP": dragon_defense.get("dragon_health_player_sop", "-")
                     })
                 return entry
 

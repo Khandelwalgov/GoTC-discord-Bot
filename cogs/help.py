@@ -21,8 +21,8 @@ COMMANDS = {
         "commands": [
             ("/update_attack", "Update primary troop attack and rally stats."),
             ("/update_defense", "Update primary troop defense and owned-SoP rein cap."),
-            ("/upgrade_dragon_attack_stats", "Update dragon attack upgrade stats."),
-            ("/upgrade_dragon_defense_stats", "Update dragon defense upgrade stats."),
+            ("/update_dragon_attack_stats", "Update dragon attack stats."),
+            ("/update_dragon_defense_stats", "Update dragon defense stats."),
             ("/get_stats", "Look up recorded combat stats."),
             ("/account_export", "Export registered account/stat data."),
         ],
@@ -112,15 +112,15 @@ DETAILS = {
         "`/update_defense target:main`",
         "Opens a modal for primary troop stats only: defense/attack/health vs player at seat of power, plus reinforcement cap at owned SoP.",
     ),
-    "upgrade_dragon_attack_stats": (
-        "Update dragon attack upgrades",
-        "`/upgrade_dragon_attack_stats target:main`",
+    "update_dragon_attack_stats": (
+        "Update dragon attack stats",
+        "`/update_dragon_attack_stats target:main`",
         "Opens a 4-field modal for dragon marcher attack, defense, health vs player at SoP, plus dragon attack vs dragon.",
     ),
-    "upgrade_dragon_defense_stats": (
-        "Update dragon defense upgrades",
-        "`/upgrade_dragon_defense_stats target:main`",
-        "Opens a 4-field modal for dragon defense, attack, health vs player at SoP, plus dragon defense vs dragon.",
+    "update_dragon_defense_stats": (
+        "Update dragon defense stats",
+        "`/update_dragon_defense_stats target:main`",
+        "Opens a 3-field modal for dragon defense, attack, and health vs player at SoP.",
     ),
     "add_register": (
         "Admin register",
