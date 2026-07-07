@@ -21,6 +21,7 @@ ROLE_DEFINITIONS = {
     "specialist_battlegrounds": {"name": "🔥 Specialist: Battlegrounds", "color": disnake.Color.purple()},
     "dragon_l41": {"name": "🐉 Dragon: L41+ (SoP Rally)", "color": disnake.Color.green()},
     "dragon_l50": {"name": "🐉 Dragon: L50+ (Creature Rally)", "color": disnake.Color.teal()},
+    "dragon_l55": {"name": "\U0001F409 Dragon: L55+ (Rally Keep)", "color": disnake.Color.from_rgb(80, 180, 160)},
     "dragon_l60": {"name": "🐉 Dragon: L60+ (Rein SoP/Keep)", "color": disnake.Color.blue()},
     "dragon_l65": {"name": "🐉 Dragon: L65+ (Rein Ally SoP)", "color": disnake.Color.purple()},
     "dragon_l69": {"name": "🐉 Dragon: L69 (Big Daddy)", "color": disnake.Color.gold()},
@@ -41,7 +42,7 @@ AVAILABILITY_KEYS = AVAILABILITY_OPTION_KEYS + AVAILABILITY_EXCLUSIVE_KEYS
 TROOP_KEYS = [f"troop_t{tier}" for tier in range(1, 13)]
 TYPE_KEYS = ["type_infantry", "type_ranged", "type_cavalry"]
 SPECIALIST_KEYS = ["specialist_hitter", "specialist_siege", "specialist_battlegrounds"]
-DRAGON_KEYS = ["dragon_l41", "dragon_l50", "dragon_l60", "dragon_l65", "dragon_l69"]
+DRAGON_KEYS = ["dragon_l41", "dragon_l50", "dragon_l55", "dragon_l60", "dragon_l65", "dragon_l69"]
 BG_ROLE_KEYS = ["bg_all", "bg_titans", "bg_ranging"]
 
 
@@ -139,7 +140,7 @@ async def ensure_roles(guild, role_keys):
     return created
 
 
-async def replace_single_role(inter, role_key, role_keys, success_message):
+async def replace_single_role(inter, role_key, role_keys, success_prefix):
     await defer_private(inter)
     role = find_role_by_key(inter.guild, role_key)
     if not role:
@@ -149,7 +150,7 @@ async def replace_single_role(inter, role_key, role_keys, success_message):
         roles_to_remove = [find_role_by_key(inter.guild, key) for key in role_keys]
         await inter.author.remove_roles(*[r for r in roles_to_remove if r and r in inter.author.roles])
         await inter.author.add_roles(role)
-        await private_done(inter, success_message)
+        await private_done(inter, f"{success_prefix} **{role.name}**.")
     except disnake.Forbidden:
         await private_done(inter, "I need a higher Steward role to manage this. Move the bot role above the GoTC roles.")
 
@@ -215,7 +216,7 @@ class TierRoleView(disnake.ui.View):
     )
     async def select_tier(self, select, inter):
         role_key = select.values[0]
-        await replace_single_role(inter, role_key, TROOP_KEYS, f"Troop tier updated to **{role_label(role_key)}**.")
+        await replace_single_role(inter, role_key, TROOP_KEYS, "Troop tier updated to")
 
 
 class TypeRoleView(disnake.ui.View):
@@ -233,7 +234,7 @@ class TypeRoleView(disnake.ui.View):
     )
     async def select_type(self, select, inter):
         role_key = select.values[0]
-        await replace_single_role(inter, role_key, TYPE_KEYS, f"Primary troop type updated to **{role_label(role_key)}**.")
+        await replace_single_role(inter, role_key, TYPE_KEYS, "Primary troop type updated to")
 
 
 class SpecialtyRoleView(disnake.ui.View):
@@ -279,6 +280,7 @@ class DragonRoleView(disnake.ui.View):
         options=[
             disnake.SelectOption(label="L41+ SoP Rally", value="dragon_l41"),
             disnake.SelectOption(label="L50+ Creature Rally", value="dragon_l50"),
+            disnake.SelectOption(label="L55+ Rally Keep", value="dragon_l55"),
             disnake.SelectOption(label="L60+ Rein SoP/Keep", value="dragon_l60"),
             disnake.SelectOption(label="L65+ Rein Ally SoP", value="dragon_l65"),
             disnake.SelectOption(label="L69 Big Daddy", value="dragon_l69"),
@@ -286,7 +288,7 @@ class DragonRoleView(disnake.ui.View):
     )
     async def select_dragon(self, select, inter):
         role_key = select.values[0]
-        await replace_single_role(inter, role_key, DRAGON_KEYS, f"Dragon level updated to **{role_label(role_key)}**.")
+        await replace_single_role(inter, role_key, DRAGON_KEYS, "Dragon level updated to")
 
 
 class BattlegroundPingView(disnake.ui.View):

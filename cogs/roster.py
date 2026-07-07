@@ -7,6 +7,7 @@ from disnake.ext import commands, tasks
 from firebase_admin import firestore
 
 from database import db
+from services.access_control import has_logistics_access, logistics_denied_message
 from services.roster_engine import build_update_draft
 from services.roster_exporter import export_csv, export_json, export_text, template_csv
 from services.roster_parser import (
@@ -59,11 +60,6 @@ def chunk_lines(lines, limit=3500):
     if len(text) <= limit:
         return text
     return text[: limit - 20] + "\n... truncated"
-
-
-def is_admin(inter):
-    permissions = getattr(inter.author, "guild_permissions", None)
-    return bool(permissions and permissions.administrator)
 
 
 def summary_embed(title, summary, errors=None, warnings=None):
@@ -139,8 +135,8 @@ class StoredDraftView(disnake.ui.View):
     @disnake.ui.button(label="Apply Draft", style=disnake.ButtonStyle.success)
     async def apply(self, button, inter):
         await inter.response.defer(ephemeral=True)
-        if not is_admin(inter):
-            return await inter.edit_original_message(content="Only server administrators can apply roster drafts.")
+        if not has_logistics_access(inter):
+            return await inter.edit_original_message(content=logistics_denied_message())
         doc = draft_ref(self.guild_id, self.roster_id, self.draft_id).get()
         if not doc.exists:
             return await inter.edit_original_message(content="Draft was not found or already cleared.")
@@ -238,8 +234,7 @@ class Roster(commands.Cog):
             file=make_file(template_csv(), "legion_roster_template.csv", "text/csv"),
         )
 
-    @commands.slash_command(name="roster_import", description="Import a full Legion roster CSV")
-    @commands.has_permissions(administrator=True)
+    @commands.slash_command(name="roster_import", description="Admin/Logistics: import a full Legion roster CSV")
     async def roster_import(
         self,
         inter,
@@ -248,6 +243,9 @@ class Roster(commands.Cog):
         replace_existing: bool = commands.Param(default=False),
     ):
         await inter.response.defer(ephemeral=True)
+        if not has_logistics_access(inter):
+            return await inter.edit_original_message(content=logistics_denied_message())
+
         metadata, existing = await load_roster(inter.guild.id)
         if existing and not replace_existing:
             return await inter.edit_original_message(
@@ -327,8 +325,7 @@ class Roster(commands.Cog):
             )
         await inter.edit_original_message(content=f"```text\n{text}\n```")
 
-    @commands.slash_command(name="roster_update_positions", description="Create a weekly Legion roster update draft")
-    @commands.has_permissions(administrator=True)
+    @commands.slash_command(name="roster_update_positions", description="Admin/Logistics: create a weekly roster update draft")
     async def roster_update_positions(
         self,
         inter,
@@ -337,6 +334,9 @@ class Roster(commands.Cog):
         mode: str = commands.Param(default="ask", choices=["ask", "auto", "random"], description="How to handle automatic moves"),
     ):
         await inter.response.defer(ephemeral=True)
+        if not has_logistics_access(inter):
+            return await inter.edit_original_message(content=logistics_denied_message())
+
         metadata, entries = await load_roster(inter.guild.id)
         if not entries:
             return await inter.edit_original_message(content="No active roster found. Use `/roster_import` first.")
@@ -433,8 +433,7 @@ class Roster(commands.Cog):
             return await inter.edit_original_message(content="Roster alts export:", file=make_file(output, "roster_alts.txt"))
         await inter.edit_original_message(content=f"```text\n{output}\n```")
 
-    @commands.slash_command(name="roster_update_expiry", description="Batch update temporary alt expiry dates")
-    @commands.has_permissions(administrator=True)
+    @commands.slash_command(name="roster_update_expiry", description="Admin/Logistics: batch update temporary alt expiry dates")
     async def roster_update_expiry(
         self,
         inter,
@@ -444,6 +443,9 @@ class Roster(commands.Cog):
         expiry: str = commands.Param(default=None, description="YYYY-MM-DD"),
     ):
         await inter.response.defer(ephemeral=True)
+        if not has_logistics_access(inter):
+            return await inter.edit_original_message(content=logistics_denied_message())
+
         metadata, entries = await load_roster(inter.guild.id)
         if not entries:
             return await inter.edit_original_message(content="No active roster found.")
@@ -484,8 +486,7 @@ class Roster(commands.Cog):
             batch.commit()
         await inter.edit_original_message(content=chunk_lines([f"Updated {name} -> {new_expiry}" for name in updated]) or "No TAs matched.")
 
-    @commands.slash_command(name="roster_config", description="Configure Legion roster expiry settings")
-    @commands.has_permissions(administrator=True)
+    @commands.slash_command(name="roster_config", description="Admin/Logistics: configure roster expiry settings")
     async def roster_config(
         self,
         inter,
@@ -494,6 +495,9 @@ class Roster(commands.Cog):
         expiry_channel: disnake.TextChannel = commands.Param(default=None),
     ):
         await inter.response.defer(ephemeral=True)
+        if not has_logistics_access(inter):
+            return await inter.edit_original_message(content=logistics_denied_message())
+
         updates = {"updated_at": firestore.SERVER_TIMESTAMP}
         if default_ta_expiry_days is not None:
             updates["default_ta_expiry_days"] = max(1, default_ta_expiry_days)

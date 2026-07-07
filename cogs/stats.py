@@ -2,6 +2,7 @@ import disnake
 from disnake.ext import commands
 from database import db
 from firebase_admin import firestore
+from services.access_control import has_logistics_access, logistics_denied_message
 
 # --- VIEWS ---
 class AltTypeView(disnake.ui.View):
@@ -14,7 +15,7 @@ class AltTypeView(disnake.ui.View):
         placeholder="Select Alt Purpose...",
         options=[
             disnake.SelectOption(label=p, value=p) for p in 
-            ["Resources", "Placeholding", "Full Account", "Attack", "Defence", "Reinforcement", "Rally"]
+            ["Resources", "Placeholding", "Full Account", "Attack", "Defense", "Reinforcement", "Rally"]
         ]
     )
     async def select_purpose(self, select: disnake.ui.Select, inter: disnake.MessageInteraction):
@@ -40,13 +41,13 @@ class AttackStatsModal(disnake.ui.Modal):
         self.is_alt = is_alt
         self.guild_id = guild_id
         components = [
-            disnake.ui.TextInput(label="Marching Attack vs SoP", custom_id="m_att"),
-            disnake.ui.TextInput(label="Marching Health vs SoP", custom_id="m_health"),
-            disnake.ui.TextInput(label="Marching Defence vs SoP", custom_id="m_def"),
-            disnake.ui.TextInput(label="Rally Cap", custom_id="r_cap"),
-            disnake.ui.TextInput(label="Rally Cap vs SoP", custom_id="r_sop"),
+            disnake.ui.TextInput(label="Marcher Attack vs Player at Seat of Power", custom_id="m_att", placeholder="Primary troop only: marcher attack vs player at seat of power"),
+            disnake.ui.TextInput(label="Marcher Defense vs Player at Seat of Power", custom_id="m_def", placeholder="Primary troop only: marcher defense vs player at seat of power"),
+            disnake.ui.TextInput(label="Marcher Health vs Player at Seat of Power", custom_id="m_health", placeholder="Primary troop only: marcher health vs player at seat of power"),
+            disnake.ui.TextInput(label="Rally Cap", custom_id="r_cap", placeholder="Your rally capacity"),
+            disnake.ui.TextInput(label="Rally Cap vs SoP", custom_id="r_sop", placeholder="Rally cap used at seat of power"),
         ]
-        super().__init__(title=f"Attack Stats: {target_name}", components=components)
+        super().__init__(title="Attack Stats - Primary Troop", components=components)
 
     async def callback(self, inter: disnake.ModalInteraction):
         await inter.response.defer(ephemeral=True)
@@ -55,25 +56,62 @@ class AttackStatsModal(disnake.ui.Modal):
         path.set({"attack_stats": inter.text_values}, merge=True)
         await inter.edit_original_message(content=f"⚔️ Attack stats updated for **{self.target_name}**.")
 
-class DefenceStatsModal(disnake.ui.Modal):
+class DefenseStatsModal(disnake.ui.Modal):
     def __init__(self, target_name: str, is_alt: bool, guild_id: int):
         self.target_name = target_name
         self.is_alt = is_alt
         self.guild_id = guild_id
         components = [
-            disnake.ui.TextInput(label="Attack at SoP (Stationary)", custom_id="s_att"),
-            disnake.ui.TextInput(label="Defence at SoP (Stationary)", custom_id="s_def"),
-            disnake.ui.TextInput(label="Health at SoP (Stationary)", custom_id="s_health"),
-            disnake.ui.TextInput(label="Reinforcement Cap vs SoP", custom_id="rein_sop"),
+            disnake.ui.TextInput(label="Defense vs Player at Seat of Power", custom_id="s_def", placeholder="Primary troop only: defense vs player at seat of power"),
+            disnake.ui.TextInput(label="Attack vs Player at Seat of Power", custom_id="s_att", placeholder="Primary troop only: attack vs player at seat of power"),
+            disnake.ui.TextInput(label="Health vs Player at Seat of Power", custom_id="s_health", placeholder="Primary troop only: health vs player at seat of power"),
+            disnake.ui.TextInput(label="Reinforcement Cap at Owned Seat of Power", custom_id="rein_sop", placeholder="Reinforcement cap at owned seat of power"),
         ]
-        super().__init__(title=f"Defence Stats: {target_name}", components=components)
+        super().__init__(title="Defense Stats - Primary Troop", components=components)
 
     async def callback(self, inter: disnake.ModalInteraction):
         await inter.response.defer(ephemeral=True)
         user_ref = db.collection("guilds").document(str(self.guild_id)).collection("users").document(str(inter.author.id))
         path = user_ref.collection("alts").document(self.target_name) if self.is_alt else user_ref
         path.set({"defence_stats": inter.text_values}, merge=True)
-        await inter.edit_original_message(content=f"🛡️ Defence stats updated for **{self.target_name}**.")
+        await inter.edit_original_message(content=f"🛡️ Defense stats updated for **{self.target_name}**.")
+
+
+class DragonStatsModal(disnake.ui.Modal):
+    def __init__(self, stat_type: str, target_name: str, is_alt: bool, guild_id: int):
+        self.stat_type = stat_type
+        self.target_name = target_name
+        self.is_alt = is_alt
+        self.guild_id = guild_id
+
+        if stat_type == "attack":
+            components = [
+                disnake.ui.TextInput(label="Dragon Marcher Attack vs Player at SoP", custom_id="dragon_m_att", placeholder="Dragon marcher attack vs player at seat of power"),
+                disnake.ui.TextInput(label="Dragon Marcher Defense vs Player at SoP", custom_id="dragon_m_def", placeholder="Dragon marcher defense vs player at seat of power"),
+                disnake.ui.TextInput(label="Dragon Marcher Health vs Player at SoP", custom_id="dragon_m_health", placeholder="Dragon marcher health vs player at seat of power"),
+                disnake.ui.TextInput(label="Dragon Attack vs Dragon", custom_id="dragon_att_vs_dragon", placeholder="Dragon attack vs dragon"),
+            ]
+            title = "Dragon Attack Upgrade Stats"
+        else:
+            components = [
+                disnake.ui.TextInput(label="Dragon Defense vs Player at SoP", custom_id="dragon_def_player_sop", placeholder="Dragon defense vs player at seat of power"),
+                disnake.ui.TextInput(label="Dragon Attack vs Player at SoP", custom_id="dragon_att_player_sop", placeholder="Dragon attack vs player at seat of power"),
+                disnake.ui.TextInput(label="Dragon Health vs Player at SoP", custom_id="dragon_health_player_sop", placeholder="Dragon health vs player at seat of power"),
+                disnake.ui.TextInput(label="Dragon Defense vs Dragon", custom_id="dragon_def_vs_dragon", placeholder="Dragon defense vs dragon"),
+            ]
+            title = "Dragon Defense Upgrade Stats"
+
+        super().__init__(title=title, components=components)
+
+    async def callback(self, inter: disnake.ModalInteraction):
+        await inter.response.defer(ephemeral=True)
+        user_ref = db.collection("guilds").document(str(self.guild_id)).collection("users").document(str(inter.author.id))
+        path = user_ref.collection("alts").document(self.target_name) if self.is_alt else user_ref
+        stat_field = "dragon_attack_stats" if self.stat_type == "attack" else "dragon_defense_stats"
+        path.set({stat_field: inter.text_values, "updated_at": firestore.SERVER_TIMESTAMP}, merge=True)
+        await inter.edit_original_message(
+            content=f"Dragon {self.stat_type} upgrade stats updated for **{self.target_name}**."
+        )
 
 class ProxyStatsModal(disnake.ui.Modal):
     def __init__(
@@ -96,22 +134,22 @@ class ProxyStatsModal(disnake.ui.Modal):
 
         if stat_type == "attack":
             components = [
-                disnake.ui.TextInput(label="Marching Attack vs SoP", custom_id="m_att"),
-                disnake.ui.TextInput(label="Marching Health vs SoP", custom_id="m_health"),
-                disnake.ui.TextInput(label="Marching Defence vs SoP", custom_id="m_def"),
-                disnake.ui.TextInput(label="Rally Cap", custom_id="r_cap"),
-                disnake.ui.TextInput(label="Rally Cap vs SoP", custom_id="r_sop"),
+                disnake.ui.TextInput(label="Marcher Attack vs Player at Seat of Power", custom_id="m_att", placeholder="Primary troop only: marcher attack vs player at seat of power"),
+                disnake.ui.TextInput(label="Marcher Defense vs Player at Seat of Power", custom_id="m_def", placeholder="Primary troop only: marcher defense vs player at seat of power"),
+                disnake.ui.TextInput(label="Marcher Health vs Player at Seat of Power", custom_id="m_health", placeholder="Primary troop only: marcher health vs player at seat of power"),
+                disnake.ui.TextInput(label="Rally Cap", custom_id="r_cap", placeholder="Your rally capacity"),
+                disnake.ui.TextInput(label="Rally Cap vs SoP", custom_id="r_sop", placeholder="Rally cap used at seat of power"),
             ]
         else:
             components = [
-                disnake.ui.TextInput(label="Attack at SoP (Stationary)", custom_id="s_att"),
-                disnake.ui.TextInput(label="Defence at SoP (Stationary)", custom_id="s_def"),
-                disnake.ui.TextInput(label="Health at SoP (Stationary)", custom_id="s_health"),
-                disnake.ui.TextInput(label="Reinforcement Cap vs SoP", custom_id="rein_sop"),
+                disnake.ui.TextInput(label="Defense vs Player at Seat of Power", custom_id="s_def", placeholder="Primary troop only: defense vs player at seat of power"),
+                disnake.ui.TextInput(label="Attack vs Player at Seat of Power", custom_id="s_att", placeholder="Primary troop only: attack vs player at seat of power"),
+                disnake.ui.TextInput(label="Health vs Player at Seat of Power", custom_id="s_health", placeholder="Primary troop only: health vs player at seat of power"),
+                disnake.ui.TextInput(label="Reinforcement Cap at Owned Seat of Power", custom_id="rein_sop", placeholder="Reinforcement cap at owned seat of power"),
             ]
 
         super().__init__(
-            title=f"{stat_type.capitalize()} Stats: {target_member_display}",
+            title=f"{stat_type.capitalize()} Stats - Primary Troop",
             components=components,
         )
 
@@ -177,21 +215,35 @@ class Stats(commands.Cog):
         if is_valid:
             await inter.response.send_modal(AttackStatsModal(target, is_alt, inter.guild.id))
 
-    @commands.slash_command(description="Update Defence/Stationary stats")
-    async def update_defence(self, inter: disnake.ApplicationCommandInteraction, target: str = commands.Param(description="Enter 'main' or Alt Name")):
+    @commands.slash_command(name="update_defense", description="Update Defense/Stationary stats")
+    async def update_defense(self, inter: disnake.ApplicationCommandInteraction, target: str = commands.Param(description="Enter 'main' or Alt Name")):
         is_valid, is_alt = await self.validate_target(inter, target)
         if is_valid:
-            await inter.response.send_modal(DefenceStatsModal(target, is_alt, inter.guild.id))
+            await inter.response.send_modal(DefenseStatsModal(target, is_alt, inter.guild.id))
 
-    @commands.slash_command(description="Admin: update a member's stats on their behalf")
-    @commands.has_permissions(administrator=True)
+    @commands.slash_command(name="upgrade_dragon_attack_stats", description="Update dragon attack upgrade stats")
+    async def upgrade_dragon_attack_stats(self, inter: disnake.ApplicationCommandInteraction, target: str = commands.Param(default="main", description="Enter 'main' or Alt Name")):
+        is_valid, is_alt = await self.validate_target(inter, target)
+        if is_valid:
+            await inter.response.send_modal(DragonStatsModal("attack", target, is_alt, inter.guild.id))
+
+    @commands.slash_command(name="upgrade_dragon_defense_stats", description="Update dragon defense upgrade stats")
+    async def upgrade_dragon_defense_stats(self, inter: disnake.ApplicationCommandInteraction, target: str = commands.Param(default="main", description="Enter 'main' or Alt Name")):
+        is_valid, is_alt = await self.validate_target(inter, target)
+        if is_valid:
+            await inter.response.send_modal(DragonStatsModal("defense", target, is_alt, inter.guild.id))
+
+    @commands.slash_command(description="Admin/Logistics: update a member's stats on their behalf")
     async def add_update(
         self,
         inter: disnake.ApplicationCommandInteraction,
         member: disnake.Member = commands.Param(description="Member whose stats should be updated"),
-        stat_type: str = commands.Param(choices=["attack", "defence"], description="Stats to update"),
+        stat_type: str = commands.Param(choices=["attack", "defense"], description="Stats to update"),
         target: str = commands.Param(default="main", description="main or an existing alt name"),
     ):
+        if not has_logistics_access(inter):
+            return await inter.send(logistics_denied_message(), ephemeral=True)
+
         is_alt = target.lower() != "main"
         if is_alt:
             alt_doc = (

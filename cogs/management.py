@@ -194,6 +194,22 @@ class Management(commands.Cog):
         guild_ref(inter.guild.id).set({"council_role": role.id}, merge=True)
         await inter.edit_original_message(content=f"Council role set to {role.mention}")
 
+    @commands.slash_command(name="setup_logistics", description="Set the Logistics role")
+    @commands.has_permissions(administrator=True)
+    async def setup_logistics(self, inter: disnake.ApplicationCommandInteraction, role: disnake.Role):
+        await inter.response.defer(ephemeral=True)
+        guild_ref(inter.guild.id).set(
+            {
+                "logistics_role": role.id,
+                "settings_updated_by": str(inter.author.id),
+                "updated_at": firestore.SERVER_TIMESTAMP,
+            },
+            merge=True,
+        )
+        await inter.edit_original_message(
+            content=f"Logistics role set to {role.mention}. This role can use admin-proxy and roster management commands."
+        )
+
     @commands.slash_command(name="setup_announcements", description="Set the channel for council announcements")
     @commands.has_permissions(administrator=True)
     async def setup_council_announcement(

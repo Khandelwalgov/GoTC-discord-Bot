@@ -3,6 +3,7 @@ from disnake.ext import commands
 from database import db
 from firebase_admin import firestore
 import pytz
+from services.access_control import has_logistics_access, logistics_denied_message
 
 # --- VIEWS (DROPDOWNS) ---
 class TierView(disnake.ui.View):
@@ -32,7 +33,7 @@ class TierView(disnake.ui.View):
             user_ref.set(data, merge=True)
             
             await inter.edit_original_message(
-                content=f"✅ **Registration Complete!**\n**IGN:** {self.ign}\n**Tier:** {tier}\n**TZ:** {self.timezone}\n\nUse `/add_access` to tag friends or `/update_stats` for combat data.",
+                content=f"✅ **Registration Complete!**\n**IGN:** {self.ign}\n**Tier:** {tier}\n**TZ:** {self.timezone}\n\nUse `/add_access` to tag friends, `/update_attack` for offense stats, or `/update_defense` for defense stats.",
                 view=None
             )
         except Exception as e:
@@ -91,8 +92,7 @@ class Registration(commands.Cog):
         choices = [tz for tz in pytz.common_timezones if string in tz.lower()]
         return choices[:25]
 
-    @commands.slash_command(description="Admin: register a member on their behalf")
-    @commands.has_permissions(administrator=True)
+    @commands.slash_command(description="Admin/Logistics: register a member on their behalf")
     async def add_register(
         self,
         inter: disnake.ApplicationCommandInteraction,
@@ -101,6 +101,9 @@ class Registration(commands.Cog):
         timezone: str = commands.Param(description="Timezone, e.g. Asia/Kolkata"),
         tier: str = commands.Param(choices=[f"T{i}" for i in range(1, 13)], description="Troop tier"),
     ):
+        if not has_logistics_access(inter):
+            return await inter.send(logistics_denied_message(), ephemeral=True)
+
         if timezone not in pytz.all_timezones:
             return await inter.send(
                 f"`{timezone}` is not a valid timezone. Pick one from autocomplete.",

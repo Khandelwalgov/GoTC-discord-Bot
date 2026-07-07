@@ -19,10 +19,12 @@ COMMANDS = {
     "stats": {
         "title": "Stats",
         "commands": [
-            ("/update_attack", "Update marching and rally stats."),
-            ("/update_defence", "Update stationary and reinforcement stats."),
+            ("/update_attack", "Update primary troop attack and rally stats."),
+            ("/update_defense", "Update primary troop defense and owned-SoP rein cap."),
+            ("/upgrade_dragon_attack_stats", "Update dragon attack upgrade stats."),
+            ("/upgrade_dragon_defense_stats", "Update dragon defense upgrade stats."),
             ("/get_stats", "Look up recorded combat stats."),
-            ("/export_roster", "Export roster data to CSV or a message."),
+            ("/account_export", "Export registered account/stat data."),
         ],
     },
     "coordination": {
@@ -43,6 +45,7 @@ COMMANDS = {
             ("/bubble_up", "Ping an owner and their access list."),
             ("/announce", "Send a council announcement."),
             ("/setup_council", "Set the council role."),
+            ("/setup_logistics", "Set the Logistics role."),
             ("/setup_announcements", "Set the announcement channel."),
         ],
     },
@@ -99,15 +102,40 @@ DETAILS = {
         "`/add_access member:@User`",
         "Adds someone to your keep access list so council can bubble the right people.",
     ),
+    "update_attack": (
+        "Update attack stats",
+        "`/update_attack target:main`",
+        "Opens a modal for primary troop stats only: marcher attack/defense/health vs player at seat of power, plus rally cap fields.",
+    ),
+    "update_defense": (
+        "Update defense stats",
+        "`/update_defense target:main`",
+        "Opens a modal for primary troop stats only: defense/attack/health vs player at seat of power, plus reinforcement cap at owned SoP.",
+    ),
+    "upgrade_dragon_attack_stats": (
+        "Update dragon attack upgrades",
+        "`/upgrade_dragon_attack_stats target:main`",
+        "Opens a 4-field modal for dragon marcher attack, defense, health vs player at SoP, plus dragon attack vs dragon.",
+    ),
+    "upgrade_dragon_defense_stats": (
+        "Update dragon defense upgrades",
+        "`/upgrade_dragon_defense_stats target:main`",
+        "Opens a 4-field modal for dragon defense, attack, health vs player at SoP, plus dragon defense vs dragon.",
+    ),
     "add_register": (
         "Admin register",
         "`/add_register member:@User in_game_name:<IGN> timezone:Asia/Kolkata tier:T11`",
-        "Admin-only shortcut that writes the selected member's profile to the same Firestore path as self-registration.",
+        "Admin or Logistics shortcut that writes the selected member's profile to the same Firestore path as self-registration.",
     ),
     "add_update": (
         "Admin stat update",
-        "`/add_update member:@User stat_type:attack target:main`",
-        "Admin-only stat modal for updating a selected member's main account or an already registered alt.",
+        "`/add_update member:@User stat_type:attack target:main` or `stat_type:defense`",
+        "Admin or Logistics stat modal for updating a selected member's main account or an already registered alt. Use `attack` or `defense`.",
+    ),
+    "setup_logistics": (
+        "Set Logistics role",
+        "`/setup_logistics role:@Logistics`",
+        "Admin-only setup. The Logistics role can use admin-proxy registration/stat commands and Legion roster management commands, but not moderation or server settings.",
     ),
     "poll": (
         "Create a poll",
@@ -122,7 +150,7 @@ DETAILS = {
     "post_role_panel": (
         "Post role panels",
         "`/post_role_panel`",
-        "Posts persistent role selection panels for troop tier, primary type, specialist roles, and dragon level.",
+        "Posts persistent role selection panels for troop tier, primary type, specialist roles, and dragon level, including L55+ Rally Keep.",
     ),
     "post_battleground_ping_panel": (
         "Post BG opt-in panel",
@@ -159,10 +187,10 @@ DETAILS = {
         "`/server_settings`",
         "Shows the configured log channel and autorole state.",
     ),
-    "export_roster": (
-        "Export roster data",
-        "`/export_roster format:CSV include_alts:True stat_columns:Full Combat Stats`",
-        "Builds a roster export from Firestore. CSV is best when council wants to sort or share data.",
+    "account_export": (
+        "Export account data",
+        "`/account_export format:CSV include_alts:True stat_columns:Full Combat Stats`",
+        "Exports registered member profiles, alts, and saved combat stats. Legion seat rosters use `/roster_export` instead.",
     ),
     "roster_template": (
         "Download roster template",
@@ -172,13 +200,13 @@ DETAILS = {
     "roster_import": (
         "Import roster",
         "`/roster_import file:<csv> roster_name:Main Legion replace_existing:False`",
-        "Validates a full roster CSV, fixes missing TA expiry defaults, then shows an Apply/Cancel preview.",
+        "Admin or Logistics. Validates a full roster CSV, fixes missing TA expiry defaults, then shows an Apply/Cancel preview.",
     ),
     "roster_update_positions": (
         "Weekly roster draft",
         "`/roster_update_positions file:<csv> mode:auto`\n"
         "`/roster_update_positions text:T1: vix | T2: t2alt, IamT31, Gov | PROTECT: vix, Gov mode:ask`",
-        "Text supports multiline sections or one-line pipe sections. Sections: T1, T2, T3, T4, PROTECT, REMOVE, MODE. Names can be comma-separated. Empty sections are allowed.",
+        "Admin or Logistics. Text supports multiline sections or one-line pipe sections. Sections: T1, T2, T3, T4, PROTECT, REMOVE, MODE. Names can be comma-separated. Empty sections are allowed.",
     ),
     "roster_alts": (
         "Roster alts",
@@ -188,7 +216,7 @@ DETAILS = {
     "roster_config": (
         "Roster config",
         "`/roster_config default_ta_expiry_days:30 ta_warning_days:1 expiry_channel:#channel`",
-        "Configures default TA expiry, warning window, and daily expiry alert channel.",
+        "Admin or Logistics. Configures default TA expiry, warning window, and daily expiry alert channel.",
     ),
 }
 
