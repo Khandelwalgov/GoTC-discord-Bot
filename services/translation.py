@@ -16,6 +16,9 @@ SUPPORTED_LANGUAGES = {
     "ru": {"native": "Русский", "english": "Russian"},
     "pt": {"native": "Português", "english": "Portuguese"},
     "it": {"native": "Italiano", "english": "Italian"},
+    "tr": {"native": "Türkçe", "english": "Turkish"},
+    "hi": {"native": "हिन्दी", "english": "Hindi"},
+    "el": {"native": "Ελληνικά", "english": "Greek"},
 }
 
 LANGUAGE_CHOICES = [info["native"] for info in SUPPORTED_LANGUAGES.values()]
