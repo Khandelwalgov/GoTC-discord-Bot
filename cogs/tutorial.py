@@ -10,6 +10,7 @@ MEMBER_TUTORIAL_PAGES = [
     "start",
     "language",
     "register",
+    "roles",
     "add_alt",
     "stats",
     "dragon",
@@ -88,8 +89,13 @@ class TutorialTopicSelect(disnake.ui.Select):
             )
             for page_id in pages
         ]
+        placeholder_key = f"{prefix}.select_placeholder"
+        placeholder = t(placeholder_key, language_code)
+        if placeholder == placeholder_key:
+            placeholder = t("tutorial.select_placeholder", language_code)
+
         super().__init__(
-            placeholder=t("tutorial.select_placeholder", language_code),
+            placeholder=placeholder,
             options=options,
             row=0,
         )
@@ -117,7 +123,6 @@ class TutorialView(disnake.ui.View):
         self.next_page.disabled = index == len(pages) - 1
         self.previous_page.label = t("tutorial.button.previous", language_code)
         self.next_page.label = t("tutorial.button.next", language_code)
-        self.start_page.label = t("tutorial.button.start", language_code)
         self.done.label = t("tutorial.button.done", language_code)
 
     async def go_to_page(self, inter, page_id):
@@ -131,10 +136,6 @@ class TutorialView(disnake.ui.View):
         index = max(0, page_index(self.current_page, self.pages) - 1)
         await self.go_to_page(inter, self.pages[index])
 
-    @disnake.ui.button(label="Start", style=disnake.ButtonStyle.blurple, row=1)
-    async def start_page(self, button, inter):
-        await self.go_to_page(inter, "start")
-
     @disnake.ui.button(label="Next", style=disnake.ButtonStyle.primary, row=1)
     async def next_page(self, button, inter):
         index = min(len(self.pages) - 1, page_index(self.current_page, self.pages) + 1)
@@ -143,7 +144,7 @@ class TutorialView(disnake.ui.View):
     @disnake.ui.button(label="Done", style=disnake.ButtonStyle.success, row=1)
     async def done(self, button, inter):
         await inter.response.edit_message(
-            content=t("tutorial.done", self.language_code),
+            content=t(f"{self.prefix}.done", self.language_code),
             embed=None,
             view=None,
         )
