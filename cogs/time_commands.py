@@ -3,6 +3,7 @@ from disnake.ext import commands
 from database import db
 import pytz
 from datetime import datetime, time, timedelta
+from services.translation import get_user_language, t
 
 class TimeStuff(commands.Cog):
     def __init__(self, bot):
@@ -50,6 +51,7 @@ class TimeStuff(commands.Cog):
         extra_text: str = commands.Param(default="", description="Message to include (e.g. 'Rally at')")
     ):
         await inter.response.defer()
+        language_code = get_user_language(inter.guild.id, inter.author.id)
         tz_str = await self.get_user_tz(inter.guild.id, inter.author.id)
         user_tz = pytz.timezone(tz_str)
 
@@ -62,8 +64,8 @@ class TimeStuff(commands.Cog):
             await inter.edit_original_message(
                 content=f"{extra_text} <t:{unix}:F> (<t:{unix}:R>)"
             )
-        except Exception as e:
-            await inter.edit_original_message(content=f"❌ Error: Use HHMM format and select a valid date.")
+        except Exception:
+            await inter.edit_original_message(content=t("time.error_24", language_code))
 
     # --- 12 HOUR COMMAND ---
     @commands.slash_command(description="Share a time in 12h format with a date and message")
@@ -75,6 +77,7 @@ class TimeStuff(commands.Cog):
         extra_text: str = commands.Param(default="", description="Message to include (e.g. 'Rally at')")
     ):
         await inter.response.defer()
+        language_code = get_user_language(inter.guild.id, inter.author.id)
         tz_str = await self.get_user_tz(inter.guild.id, inter.author.id)
         user_tz = pytz.timezone(tz_str)
 
@@ -84,7 +87,7 @@ class TimeStuff(commands.Cog):
             try:
                 parsed_time = datetime.strptime(time_input.lower().replace(" ", ""), "%I%p").time()
             except:
-                return await inter.edit_original_message(content="❌ Format: 5:30pm or 12am")
+                return await inter.edit_original_message(content=t("time.error_12_format", language_code))
 
         try:
             target_date = datetime.strptime(date_input, "%Y-%m-%d").date()
@@ -94,8 +97,8 @@ class TimeStuff(commands.Cog):
             await inter.edit_original_message(
                 content=f"{extra_text} <t:{unix}:F> (<t:{unix}:R>)"
             )
-        except Exception as e:
-            await inter.edit_original_message(content=f"❌ Error: Select a valid date from the list.")
+        except Exception:
+            await inter.edit_original_message(content=t("time.error_date", language_code))
 
     # Linking autocompletes
     @time24.autocomplete("date_input")

@@ -2,6 +2,7 @@ import disnake
 from disnake.ext import commands
 from database import db
 from firebase_admin import firestore
+from services.public_translation import add_translate_button, register_translatable_message
 
 
 def guild_ref(guild_id: int):
@@ -53,6 +54,7 @@ async def author_has_council_role(inter: disnake.MessageInteraction):
 class PollView(disnake.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
+        add_translate_button(self)
 
     @disnake.ui.button(
         label="Vote",
@@ -272,6 +274,7 @@ class Management(commands.Cog):
         message = await inter.channel.send(embed=build_poll_embed(poll_data), view=PollView())
         poll_data["message_id"] = str(message.id)
         poll_ref(inter.guild.id, str(message.id)).set(poll_data, merge=True)
+        register_translatable_message(inter.guild.id, message, "poll")
         await inter.send("Poll started.", ephemeral=True)
 
 

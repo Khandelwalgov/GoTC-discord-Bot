@@ -8,6 +8,7 @@ from firebase_admin import firestore
 
 from database import db
 from cogs.weekend import BRAND_COLOR, find_role_by_key
+from services.public_translation import add_translate_button, register_translatable_message
 
 
 BG_TYPES = {
@@ -105,6 +106,7 @@ async def refresh_event_message(bot, guild_id, event_id, event_data):
 class BattlegroundSignupView(disnake.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
+        add_translate_button(self)
 
     @disnake.ui.button(label="Sign Up", style=disnake.ButtonStyle.success, custom_id="steward_bg_event_signup")
     async def signup(self, button, inter):
@@ -199,6 +201,7 @@ class Battlegrounds(commands.Cog):
         message = await inter.channel.send(content=content, embed=build_event_embed(event_data), view=BattlegroundSignupView())
         event_data["message_id"] = str(message.id)
         event_ref(inter.guild.id, str(message.id)).set(event_data, merge=True)
+        register_translatable_message(inter.guild.id, message, "bg_event")
 
         await inter.edit_original_message(
             content=f"Battleground event created for <t:{int(starts_at.timestamp())}:F>."

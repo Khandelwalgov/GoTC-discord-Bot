@@ -4,6 +4,7 @@ from database import db
 from firebase_admin import firestore
 import pandas as pd
 import io
+from services.translation import get_user_language, t
 
 class Council(commands.Cog):
     def __init__(self, bot):
@@ -36,25 +37,26 @@ class Council(commands.Cog):
         ign: str = commands.Param(default=None)
     ):
         await inter.response.defer()
+        language_code = get_user_language(inter.guild.id, inter.author.id)
         uid, data = await self.get_user_context(inter, member, ign)
 
         if not data:
-            return await inter.edit_original_message(content="❌ No records found for that input in this server.")
+            return await inter.edit_original_message(content=t("lookup.not_found", language_code))
 
         # Access List
         access_uids = data.get("access_list", [])
-        access_str = ", ".join([f"<@{u}>" for u in access_uids]) if access_uids else "None"
+        access_str = ", ".join([f"<@{u}>" for u in access_uids]) if access_uids else t("lookup.none", language_code)
         
         # Alts (Server Isolated)
         alts_ref = db.collection("guilds").document(str(inter.guild.id)).collection("users").document(uid).collection("alts").stream()
-        alts_list = [f"{alt.id} ({alt.to_dict().get('purpose', 'N/A')})" for alt in alts_ref]
-        alts_str = ", ".join(alts_list) if alts_list else "None"
+        alts_list = [f"{alt.id} ({alt.to_dict().get('purpose', t('lookup.not_available', language_code))})" for alt in alts_ref]
+        alts_str = ", ".join(alts_list) if alts_list else t("lookup.none", language_code)
 
-        embed = disnake.Embed(title=f"🏰 Security Profile: {data.get('ign')}", color=disnake.Color.dark_blue())
-        embed.add_field(name="Owner", value=f"<@{uid}>", inline=True)
-        embed.add_field(name="Tier", value=data.get("tier", "Unknown"), inline=True)
-        embed.add_field(name="Access List", value=access_str, inline=False)
-        embed.add_field(name="Registered Alts", value=alts_str, inline=False)
+        embed = disnake.Embed(title=t("lookup.title", language_code, ign=data.get("ign")), color=disnake.Color.dark_blue())
+        embed.add_field(name=t("lookup.owner", language_code), value=f"<@{uid}>", inline=True)
+        embed.add_field(name=t("lookup.tier", language_code), value=data.get("tier", t("lookup.unknown", language_code)), inline=True)
+        embed.add_field(name=t("lookup.access_list", language_code), value=access_str, inline=False)
+        embed.add_field(name=t("lookup.registered_alts", language_code), value=alts_str, inline=False)
         await inter.edit_original_message(embed=embed)
 
     @commands.slash_command(description="Retrieve all combat stats for a specific account")
@@ -65,44 +67,45 @@ class Council(commands.Cog):
         ign: str = commands.Param(default=None)
     ):
         await inter.response.defer()
+        language_code = get_user_language(inter.guild.id, inter.author.id)
         uid, data = await self.get_user_context(inter, member, ign)
 
         if not data:
-            return await inter.edit_original_message(content="❌ Account not found in this server.")
+            return await inter.edit_original_message(content=t("stats_display.not_found", language_code))
 
         att = data.get("attack_stats", {})
         dfn = data.get("defence_stats", {})
         dragon_att = data.get("dragon_attack_stats", {})
         dragon_def = data.get("dragon_defense_stats", {})
 
-        embed = disnake.Embed(title=f"Combat Stats: {data.get('ign')}", color=disnake.Color.red())
+        embed = disnake.Embed(title=t("stats_display.title", language_code, ign=data.get("ign")), color=disnake.Color.red())
         
-        atk_fmt = (f"**Marcher attack vs player at seat of power:** {att.get('m_att', '-')}\n"
-                   f"**Marcher defense vs player at seat of power:** {att.get('m_def', '-')}\n"
-                   f"**Marcher health vs player at seat of power:** {att.get('m_health', '-')}\n"
-                   f"**Rally Cap:** {att.get('r_cap', '-')}\n"
-                   f"**Rally vs SoP:** {att.get('r_sop', '-')}")
+        atk_fmt = (f"**{t('stats_display.m_att', language_code)}:** {att.get('m_att', '-')}\n"
+                   f"**{t('stats_display.m_def', language_code)}:** {att.get('m_def', '-')}\n"
+                   f"**{t('stats_display.m_health', language_code)}:** {att.get('m_health', '-')}\n"
+                   f"**{t('stats_display.r_cap', language_code)}:** {att.get('r_cap', '-')}\n"
+                   f"**{t('stats_display.r_sop', language_code)}:** {att.get('r_sop', '-')}")
         
-        def_fmt = (f"**Defense vs player at seat of power:** {dfn.get('s_def', '-')}\n"
-                   f"**Attack vs player at seat of power:** {dfn.get('s_att', '-')}\n"
-                   f"**Health vs player at seat of power:** {dfn.get('s_health', '-')}\n"
-                   f"**Reinforcement cap at owned SoP:** {dfn.get('rein_sop', '-')}")
+        def_fmt = (f"**{t('stats_display.s_def', language_code)}:** {dfn.get('s_def', '-')}\n"
+                   f"**{t('stats_display.s_att', language_code)}:** {dfn.get('s_att', '-')}\n"
+                   f"**{t('stats_display.s_health', language_code)}:** {dfn.get('s_health', '-')}\n"
+                   f"**{t('stats_display.rein_sop', language_code)}:** {dfn.get('rein_sop', '-')}")
 
-        embed.add_field(name="Offense", value=atk_fmt, inline=True)
-        embed.add_field(name="Defense", value=def_fmt, inline=True)
+        embed.add_field(name=t("stats_display.offense", language_code), value=atk_fmt, inline=True)
+        embed.add_field(name=t("stats_display.defense", language_code), value=def_fmt, inline=True)
 
         if dragon_att:
-            dragon_atk_fmt = (f"**Dragon marcher attack vs player at SoP:** {dragon_att.get('dragon_m_att', '-')}\n"
-                              f"**Dragon marcher defense vs player at SoP:** {dragon_att.get('dragon_m_def', '-')}\n"
-                              f"**Dragon marcher health vs player at SoP:** {dragon_att.get('dragon_m_health', '-')}\n"
-                              f"**Dragon attack vs dragon:** {dragon_att.get('dragon_att_vs_dragon', '-')}")
-            embed.add_field(name="Dragon Offense", value=dragon_atk_fmt, inline=False)
+            dragon_atk_fmt = (f"**{t('stats_display.dragon_m_att', language_code)}:** {dragon_att.get('dragon_m_att', '-')}\n"
+                              f"**{t('stats_display.dragon_m_def', language_code)}:** {dragon_att.get('dragon_m_def', '-')}\n"
+                              f"**{t('stats_display.dragon_m_health', language_code)}:** {dragon_att.get('dragon_m_health', '-')}\n"
+                              f"**{t('stats_display.dragon_att_vs_dragon', language_code)}:** {dragon_att.get('dragon_att_vs_dragon', '-')}")
+            embed.add_field(name=t("stats_display.dragon_offense", language_code), value=dragon_atk_fmt, inline=False)
 
         if dragon_def:
-            dragon_def_fmt = (f"**Dragon defense vs player at SoP:** {dragon_def.get('dragon_def_player_sop', '-')}\n"
-                              f"**Dragon attack vs player at SoP:** {dragon_def.get('dragon_att_player_sop', '-')}\n"
-                              f"**Dragon health vs player at SoP:** {dragon_def.get('dragon_health_player_sop', '-')}")
-            embed.add_field(name="Dragon Defense", value=dragon_def_fmt, inline=False)
+            dragon_def_fmt = (f"**{t('stats_display.dragon_def_player_sop', language_code)}:** {dragon_def.get('dragon_def_player_sop', '-')}\n"
+                              f"**{t('stats_display.dragon_att_player_sop', language_code)}:** {dragon_def.get('dragon_att_player_sop', '-')}\n"
+                              f"**{t('stats_display.dragon_health_player_sop', language_code)}:** {dragon_def.get('dragon_health_player_sop', '-')}")
+            embed.add_field(name=t("stats_display.dragon_defense", language_code), value=dragon_def_fmt, inline=False)
 
         await inter.edit_original_message(embed=embed)
 
@@ -114,15 +117,21 @@ class Council(commands.Cog):
         ign: str = commands.Param(default=None)
     ):
         await inter.response.defer()
+        language_code = get_user_language(inter.guild.id, inter.author.id)
         uid, data = await self.get_user_context(inter, member, ign)
 
         if not data:
-            return await inter.edit_original_message(content="❌ Account not found in this server.")
+            return await inter.edit_original_message(content=t("bubble.not_found", language_code))
 
         access_list = data.get("access_list", [])
         mentions = [f"<@{uid}>"] + [f"<@{a_uid}>" for a_uid in access_list]
         
-        content = f"📣 **BUBBLE UP ALERT: {data.get('ign')}**\n{' '.join(mentions)}\nYou are requested to check this Keep status immediately!"
+        content = t(
+            "bubble.message",
+            language_code,
+            ign=data.get("ign"),
+            mentions=" ".join(mentions),
+        )
         await inter.edit_original_message(content=content)
 
     @commands.slash_command(name="account_export", description="Export registered account/profile stat data")

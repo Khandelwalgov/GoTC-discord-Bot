@@ -3,6 +3,7 @@ import re
 import disnake
 from disnake.ext import commands
 from database import db
+from services.public_translation import add_translate_button, register_translatable_message
 
 
 BRAND_COLOR = disnake.Color.from_rgb(190, 145, 70)
@@ -158,6 +159,7 @@ async def replace_single_role(inter, role_key, role_keys, success_prefix):
 class AvailabilityView(disnake.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
+        add_translate_button(self)
 
     async def toggle_availability(self, inter, role_key):
         await defer_private(inter)
@@ -208,6 +210,7 @@ class AvailabilityView(disnake.ui.View):
 class TierRoleView(disnake.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
+        add_translate_button(self)
 
     @disnake.ui.string_select(
         custom_id="select_tier_role",
@@ -222,6 +225,7 @@ class TierRoleView(disnake.ui.View):
 class TypeRoleView(disnake.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
+        add_translate_button(self)
 
     @disnake.ui.string_select(
         custom_id="select_type_role",
@@ -240,6 +244,7 @@ class TypeRoleView(disnake.ui.View):
 class SpecialtyRoleView(disnake.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
+        add_translate_button(self)
 
     async def toggle_role(self, inter, role_key):
         await defer_private(inter)
@@ -273,6 +278,7 @@ class SpecialtyRoleView(disnake.ui.View):
 class DragonRoleView(disnake.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
+        add_translate_button(self)
 
     @disnake.ui.string_select(
         custom_id="select_dragon_role",
@@ -294,6 +300,7 @@ class DragonRoleView(disnake.ui.View):
 class BattlegroundPingView(disnake.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
+        add_translate_button(self)
 
     async def toggle_bg_role(self, inter, role_key):
         await defer_private(inter)
@@ -382,7 +389,17 @@ class Weekend(commands.Cog):
             "Weekend Availability Check",
             "Open, Mid-Shift, and Close can be combined. Click again to remove. Throughout and Absent are exclusive.",
         )
-        await inter.channel.send(embed=embed, view=AvailabilityView())
+        message = await inter.channel.send(embed=embed, view=AvailabilityView())
+        register_translatable_message(
+            inter.guild.id,
+            message,
+            "static_embed",
+            {
+                "title_key": "public.availability.title",
+                "description_key": "public.availability.description",
+                "footer_key": "public.role_ids_footer",
+            },
+        )
         await inter.edit_original_message(content="Availability panel posted.")
 
     @commands.slash_command(name="post_role_panel", description="Post the permanent GoTC role selection panel")
@@ -397,7 +414,18 @@ class Weekend(commands.Cog):
         ]
 
         for title, description, view in panels:
-            await inter.channel.send(embed=panel_embed(title, description), view=view)
+            message = await inter.channel.send(embed=panel_embed(title, description), view=view)
+            key = title.lower().replace(" ", "_")
+            register_translatable_message(
+                inter.guild.id,
+                message,
+                "static_embed",
+                {
+                    "title_key": f"public.role_panel.{key}.title",
+                    "description_key": f"public.role_panel.{key}.description",
+                    "footer_key": "public.role_ids_footer",
+                },
+            )
 
         await inter.edit_original_message(content="Role selection panels posted.")
 
@@ -409,7 +437,17 @@ class Weekend(commands.Cog):
             "Battleground Ping Opt-In",
             "Choose whether you want all battleground pings, Titans of the North pings, or The Great Ranging pings.",
         )
-        await inter.channel.send(embed=embed, view=BattlegroundPingView())
+        message = await inter.channel.send(embed=embed, view=BattlegroundPingView())
+        register_translatable_message(
+            inter.guild.id,
+            message,
+            "static_embed",
+            {
+                "title_key": "public.bg_ping_panel.title",
+                "description_key": "public.bg_ping_panel.description",
+                "footer_key": "public.role_ids_footer",
+            },
+        )
         await inter.edit_original_message(content="Battleground ping panel posted.")
 
 

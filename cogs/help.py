@@ -1,6 +1,8 @@
 import disnake
 from disnake.ext import commands
 
+from services.translation import get_user_language, t
+
 
 BRAND_COLOR = disnake.Color.from_rgb(190, 145, 70)
 
@@ -9,6 +11,8 @@ COMMANDS = {
     "profile": {
         "title": "Profile",
         "commands": [
+            ("/language", "Choose your Steward language."),
+            ("/tutorial", "Open the guided member tutorial."),
             ("/register", "Create or update your GoTC profile."),
             ("/add_alt", "Add an alt under your account."),
             ("/update_name", "Rename your main or an alt."),
@@ -53,6 +57,7 @@ COMMANDS = {
         "title": "Setup",
         "commands": [
             ("/setup_gotc_roles", "Create or verify all GoTC roles."),
+            ("/tutorial_admin", "Open the guided admin setup tutorial."),
             ("/post_role_panel", "Post troop, type, specialist, and dragon panels."),
             ("/post_battleground_ping_panel", "Post BG ping opt-in buttons."),
             ("/set_logs_channel", "Set join/leave log channel."),
@@ -87,6 +92,21 @@ COMMANDS = {
 
 
 DETAILS = {
+    "language": (
+        "Choose your language",
+        "`/language language:Deutsch`",
+        "Sets the language used for supported private replies, help, tutorials, and translated public message copies.",
+    ),
+    "tutorial": (
+        "Guided walkthrough",
+        "`/tutorial` or `/tutorial topic:stats`",
+        "Opens a private, button-driven walkthrough for registration, stats, alts, access, lookup, bubble alerts, and time commands.",
+    ),
+    "tutorial_admin": (
+        "Admin setup walkthrough",
+        "`/tutorial_admin` or `/tutorial_admin topic:roster_import`",
+        "Opens a private admin guide for role setup, Logistics/Council setup, BG tools, polls, and roster management.",
+    ),
     "register": (
         "Create your profile",
         "`/register in_game_name:<IGN> timezone:<Region/City>`",
@@ -101,6 +121,16 @@ DETAILS = {
         "Grant keep access",
         "`/add_access member:@User`",
         "Adds someone to your keep access list so council can bubble the right people.",
+    ),
+    "update_access": (
+        "Remove keep access",
+        "`/update_access`",
+        "Shows your access list privately and lets you remove someone from it.",
+    ),
+    "update_name": (
+        "Rename main or alt",
+        "`/update_name current_name:<old> new_name:<new>`",
+        "Updates your main IGN or renames one of your registered alts.",
     ),
     "update_attack": (
         "Update attack stats",
@@ -121,6 +151,31 @@ DETAILS = {
         "Update dragon defense stats",
         "`/update_dragon_defense_stats target:main`",
         "Opens a 3-field modal for dragon defense, attack, and health vs player at SoP.",
+    ),
+    "get_stats": (
+        "View combat stats",
+        "`/get_stats member:@User` or `/get_stats ign:<IGN>`",
+        "Shows saved offense, defense, dragon offense, and dragon defense stats for a registered account.",
+    ),
+    "lookup_account": (
+        "Look up an account",
+        "`/lookup_account member:@User` or `/lookup_account ign:<IGN>`",
+        "Shows the account owner, tier, alts, and access list for the selected profile.",
+    ),
+    "bubble_up": (
+        "Send a bubble alert",
+        "`/bubble_up member:@User` or `/bubble_up ign:<IGN>`",
+        "Tags the account owner and everyone on their access list when a keep needs attention.",
+    ),
+    "time12": (
+        "Post a 12-hour timestamp",
+        "`/time12 time_input:8:30pm date_input:<date> extra_text:Rally at`",
+        "Converts your registered timezone into a Discord timestamp everyone sees in their own local time.",
+    ),
+    "time24": (
+        "Post a 24-hour timestamp",
+        "`/time24 hhmm:2030 date_input:<date> extra_text:Rally at`",
+        "Converts your registered timezone into a Discord timestamp everyone sees in their own local time.",
     ),
     "add_register": (
         "Admin register",
@@ -146,6 +201,16 @@ DETAILS = {
         "Start availability check",
         "`/availability_check`",
         "Clears old weekend availability roles and posts a fresh panel. Open, Mid-Shift, and Close can stack; Throughout and Absent are exclusive.",
+    ),
+    "availability_report": (
+        "Show availability report",
+        "`/availability_report`",
+        "Shows members grouped by the current weekend availability roles.",
+    ),
+    "setup_gotc_roles": (
+        "Create GoTC roles",
+        "`/setup_gotc_roles`",
+        "Creates or verifies Steward's GoTC roles, saves their role IDs, and keeps renamed roles working later.",
     ),
     "post_role_panel": (
         "Post role panels",
@@ -187,6 +252,26 @@ DETAILS = {
         "`/server_settings`",
         "Shows the configured log channel and autorole state.",
     ),
+    "moderate": (
+        "Moderate a member",
+        "`/moderate action:kick member:@User reason:<reason>` or `action:ban`",
+        "Kick or ban a member. This uses Discord moderation permissions and is separate from Steward logistics access.",
+    ),
+    "setup_council": (
+        "Set Council role",
+        "`/setup_council role:@Council`",
+        "Admin-only setup. The Council role can close polls and use council-only announcement tools.",
+    ),
+    "setup_announcements": (
+        "Set announcement channel",
+        "`/setup_announcements channel:#announcements`",
+        "Admin-only setup. Council announcements are sent to this configured channel.",
+    ),
+    "announce": (
+        "Send council announcement",
+        "`/announce message:<text>`",
+        "Council-only command that posts an @everyone announcement embed in the configured announcement channel.",
+    ),
     "account_export": (
         "Export account data",
         "`/account_export format:CSV include_alts:True stat_columns:Full Combat Stats`",
@@ -201,6 +286,16 @@ DETAILS = {
         "Import roster",
         "`/roster_import file:<csv> roster_name:Main Legion replace_existing:False`",
         "Admin or Logistics. Validates a full roster CSV, fixes missing TA expiry defaults, then shows an Apply/Cancel preview.",
+    ),
+    "roster_validate": (
+        "Validate roster",
+        "`/roster_validate`",
+        "Checks the active Legion roster for hierarchy, capacity, and temporary-alt expiry warnings.",
+    ),
+    "roster_export": (
+        "Export roster",
+        "`/roster_export format:csv`",
+        "Exports the lightweight Legion seat roster as CSV, JSON, or text. Registered account data uses `/account_export`.",
     ),
     "roster_update_positions": (
         "Weekly roster draft",
@@ -218,7 +313,17 @@ DETAILS = {
         "`/roster_config default_ta_expiry_days:30 ta_warning_days:1 expiry_channel:#channel`",
         "Admin or Logistics. Configures default TA expiry, warning window, and daily expiry alert channel.",
     ),
+    "roster_update_expiry": (
+        "Update TA expiry",
+        "`/roster_update_expiry mode:specific names:AltOne, AltTwo days:14`",
+        "Admin or Logistics. Batch updates expiry dates for temporary alts by all TAs, newly added TAs, or specific names.",
+    ),
 }
+
+
+def translated(language_code, key, fallback):
+    value = t(key, language_code)
+    return fallback if value == key else value
 
 
 class HelpCommand(commands.Cog):
@@ -232,31 +337,43 @@ class HelpCommand(commands.Cog):
         command: str = commands.Param(default=None, description="Optional command name for details"),
     ):
         await inter.response.defer(ephemeral=True)
+        language_code = get_user_language(inter.guild.id, inter.author.id)
 
         if command:
             command_name = command.lower().replace("/", "").strip()
             if command_name in DETAILS:
                 title, usage, details = DETAILS[command_name]
+                title = translated(language_code, f"help.detail.{command_name}.title", title)
+                usage = translated(language_code, f"help.detail.{command_name}.usage", usage)
+                details = translated(language_code, f"help.detail.{command_name}.details", details)
                 embed = disnake.Embed(title=f"/{command_name}: {title}", color=BRAND_COLOR)
-                embed.add_field(name="Usage", value=usage, inline=False)
-                embed.add_field(name="Details", value=details, inline=False)
+                embed.add_field(name=t("help.usage", language_code), value=usage, inline=False)
+                embed.add_field(name=t("help.details", language_code), value=details, inline=False)
                 return await inter.edit_original_message(embed=embed)
 
             return await inter.edit_original_message(
-                content=f"I do not have a detailed card for `/{command_name}` yet. Try `/help` for the full menu."
+                content=t("help.no_detail", language_code, command=command_name)
             )
 
         embed = disnake.Embed(
-            title="Steward Command Guide",
-            description="Server-isolated GoTC coordination, roles, profiles, stats, and council tools.",
+            title=t("help.title", language_code),
+            description=t("help.description", language_code),
             color=BRAND_COLOR,
         )
 
-        for section in COMMANDS.values():
-            lines = [f"`{name}` - {description}" for name, description in section["commands"]]
-            embed.add_field(name=section["title"], value="\n".join(lines), inline=False)
+        for section_key, section in COMMANDS.items():
+            lines = []
+            for name, description in section["commands"]:
+                command_key = name.replace("/", "")
+                short = translated(language_code, f"help.command.{command_key}.short", description)
+                lines.append(f"`{name}` - {short}")
+            embed.add_field(
+                name=translated(language_code, f"help.section.{section_key}", section["title"]),
+                value="\n".join(lines),
+                inline=False,
+            )
 
-        embed.set_footer(text="Tip: use /help command:poll for a focused command card.")
+        embed.set_footer(text=t("help.footer", language_code))
         await inter.edit_original_message(embed=embed)
 
     @help.autocomplete("command")
